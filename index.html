@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Confessly - Anonymous Video Confessions</title>
+    <title>Confessly - Anonymous Confessions</title>
     <style>
         :root {
             --primary: #0084ff;
@@ -93,7 +93,77 @@
             letter-spacing: 0.5px;
         }
         
-        /* Rest of your existing CSS remains the same */
+        /* Home Page Styles */
+        .home-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .welcome-message {
+            color: white;
+            margin-bottom: 2rem;
+            max-width: 600px;
+        }
+        
+        .welcome-message h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: var(--secondary);
+        }
+        
+        .welcome-message p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+        
+        .chat-options {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .chat-option {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 2rem;
+            width: 300px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .chat-option:hover {
+            transform: translateY(-5px);
+            background-color: rgba(255, 255, 255, 0.15);
+            border-color: var(--secondary);
+        }
+        
+        .chat-option h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .chat-option p {
+            color: var(--text-light);
+            margin-bottom: 1.5rem;
+        }
+        
+        .option-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--secondary);
+        }
+        
+        /* Chat Page Styles (existing) */
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -101,6 +171,7 @@
             flex: 1;
             display: flex;
             flex-direction: column;
+            display: none; /* Initially hidden */
         }
         
         .video-container {
@@ -280,6 +351,10 @@
             display: none !important;
         }
         
+        .visible {
+            display: flex !important;
+        }
+        
         .loading {
             position: relative;
         }
@@ -321,6 +396,15 @@
             font-size: 0.9rem;
             z-index: 10;
         }
+        
+        /* Text-only specific styles */
+        .text-only .video-container {
+            display: none;
+        }
+        
+        .text-only .video-label {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -332,15 +416,41 @@
             
             <div class="title-container">
                 <h1 class="title">CONFESSLY</h1>
-                <p class="tagline">Anonymous Video Confessions</p>
+                <p class="tagline">Anonymous Confessions</p>
             </div>
         </div>
     </header>
     
+    <!-- Home Page -->
+    <div class="home-container" id="home-page">
+        <div class="welcome-message">
+            <h2>Share Your Anonymous Confessions</h2>
+            <p>Connect with strangers and share your deepest thoughts, weird habits, or guilty pleasures completely anonymously.</p>
+            <p>Choose how you want to confess:</p>
+        </div>
+        
+        <div class="chat-options">
+            <div class="chat-option" id="video-chat-option">
+                <div class="option-icon">🎥</div>
+                <h3>Video + Text Chat</h3>
+                <p>Face-to-face anonymous confessions with video and text chat</p>
+                <button class="primary-btn">Start Video Chat</button>
+            </div>
+            
+            <div class="chat-option" id="text-chat-option">
+                <div class="option-icon">✍️</div>
+                <h3>Text Only Chat</h3>
+                <p>Pure text-based anonymous confessions</p>
+                <button class="secondary-btn">Start Text Chat</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Chat Page -->
     <div class="connection-status hidden" id="connection-status">Connecting...</div>
     
-    <div class="container">
-        <div class="video-container">
+    <div class="container" id="chat-page">
+        <div class="video-container" id="video-container">
             <div class="video-box">
                 <video id="local-video" autoplay muted></video>
                 <div class="video-label">You</div>
@@ -381,6 +491,11 @@
     
     <script>
         // DOM elements
+        const homePage = document.getElementById('home-page');
+        const chatPage = document.getElementById('chat-page');
+        const videoChatOption = document.getElementById('video-chat-option');
+        const textChatOption = document.getElementById('text-chat-option');
+        const videoContainer = document.getElementById('video-container');
         const localVideo = document.getElementById('local-video');
         const remoteVideo = document.getElementById('remote-video');
         const interestInput = document.getElementById('interest-input');
@@ -392,19 +507,29 @@
         const connectionStatus = document.getElementById('connection-status');
         const homeButton = document.getElementById('home-button');
         
-        // WebRTC variables
+        // State
         let localStream;
         let peerConnection;
         let dataChannel;
         let socket;
         let roomId;
         let isCaller = false;
+        let isTextOnly = false;
         
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
-            setupCamera();
+            // Setup event listeners for chat options
+            videoChatOption.addEventListener('click', () => {
+                isTextOnly = false;
+                startChatSession();
+            });
             
-            // Setup event listeners
+            textChatOption.addEventListener('click', () => {
+                isTextOnly = true;
+                startChatSession();
+            });
+            
+            // Setup event listeners for chat page
             startBtn.addEventListener('click', startChat);
             stopBtn.addEventListener('click', stopChat);
             sendBtn.addEventListener('click', sendMessage);
@@ -415,25 +540,72 @@
             // Home button functionality
             homeButton.addEventListener('click', (e) => {
                 e.preventDefault();
-                stopChat();
-                chatBox.innerHTML = '';
-                addStatusMessage("Ready to connect. Click 'Start Chat' to begin.");
+                if (chatPage.classList.contains('visible')) {
+                    stopChat();
+                    showHomePage();
+                }
             });
         });
+        
+        function startChatSession() {
+            if (isTextOnly) {
+                // Text-only mode doesn't need camera
+                showChatPage();
+            } else {
+                // Video chat mode needs camera access
+                setupCamera()
+                    .then(() => showChatPage())
+                    .catch(err => {
+                        console.error("Camera error:", err);
+                        // Fall back to text-only if camera fails
+                        isTextOnly = true;
+                        showChatPage();
+                    });
+            }
+        }
+        
+        function showHomePage() {
+            homePage.style.display = 'flex';
+            chatPage.classList.remove('visible');
+            connectionStatus.classList.add('hidden');
+        }
+        
+        function showChatPage() {
+            homePage.style.display = 'none';
+            chatPage.classList.add('visible');
+            
+            if (isTextOnly) {
+                chatPage.classList.add('text-only');
+                videoContainer.classList.add('hidden');
+            } else {
+                chatPage.classList.remove('text-only');
+                videoContainer.classList.remove('hidden');
+            }
+            
+            // Clear chat
+            chatBox.innerHTML = '';
+            addStatusMessage(isTextOnly ? 
+                "Ready for text chat. Click 'Start Chat' to begin." : 
+                "Ready for video chat. Click 'Start Chat' to begin.");
+        }
         
         // Set up user's camera
         async function setupCamera() {
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({ 
-                    video: true, 
-                    audio: true 
+                    video: !isTextOnly, 
+                    audio: !isTextOnly 
                 });
-                localVideo.srcObject = localStream;
+                if (!isTextOnly) {
+                    localVideo.srcObject = localStream;
+                }
                 startBtn.disabled = false;
+                return Promise.resolve();
             } catch (err) {
                 console.error("Error accessing media devices:", err);
                 addStatusMessage("Could not access camera/microphone. Please check permissions.");
                 startBtn.disabled = true;
+                return Promise.reject(err);
             }
         }
         
@@ -473,7 +645,9 @@
                 }
                 
                 // Simulate remote video stream (in real app this would be actual remote stream)
-                remoteVideo.srcObject = localStream.clone();
+                if (!isTextOnly) {
+                    remoteVideo.srcObject = localStream.clone();
+                }
                 
                 // Set up simulated data channel
                 setupDataChannel();
@@ -498,7 +672,7 @@
             connectionStatus.classList.add('hidden');
             
             // Reset video elements
-            if (remoteVideo.srcObject) {
+            if (!isTextOnly && remoteVideo.srcObject) {
                 remoteVideo.srcObject.getTracks().forEach(track => track.stop());
                 remoteVideo.srcObject = null;
             }
