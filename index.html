@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Confession Chat - Anonymous 1-on-1 Video</title>
+    <title>Confessly - Anonymous Video Confessions</title>
     <style>
         :root {
             --primary: #0084ff;
@@ -19,8 +19,10 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
         }
+        
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap');
         
         body {
             background-color: var(--dark);
@@ -34,24 +36,64 @@
             background-color: var(--primary);
             color: white;
             padding: 1rem;
-            text-align: center;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 80px;
+        }
+        
+        .header-content {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            max-width: 1200px;
             position: relative;
         }
         
-        .logo {
+        .logo-link {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
             position: absolute;
-            top: 10px;
-            left: 10px;
-            height: 40px;
+            left: 20px;
+        }
+        
+        .logo {
+            height: 50px;
             width: auto;
+            transition: transform 0.3s ease;
         }
         
-        h1 {
-            font-size: 1.8rem;
-            margin-bottom: 0.5rem;
+        .logo:hover {
+            transform: scale(1.05);
         }
         
+        .title-container {
+            text-align: center;
+            flex-grow: 1;
+        }
+        
+        .title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #fff 0%, #00c3ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            letter-spacing: 1px;
+            margin-bottom: 0.2rem;
+        }
+        
+        .tagline {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Rest of your existing CSS remains the same */
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -268,7 +310,6 @@
             font-size: 0.9rem;
         }
         
-        /* Connection status */
         .connection-status {
             position: fixed;
             top: 10px;
@@ -284,9 +325,16 @@
 </head>
 <body>
     <header>
-        <img src="images/main%20logo%202.png" alt="Confession Chat Logo" class="logo">
-        <h1>Confession Chat</h1>
-        <p>Anonymous 1-on-1 video chat with strangers</p>
+        <div class="header-content">
+            <a href="#" class="logo-link" id="home-button">
+                <img src="images/main%20logo%202.png" alt="Confessly Logo" class="logo">
+            </a>
+            
+            <div class="title-container">
+                <h1 class="title">CONFESSLY</h1>
+                <p class="tagline">Anonymous Video Confessions</p>
+            </div>
+        </div>
     </header>
     
     <div class="connection-status hidden" id="connection-status">Connecting...</div>
@@ -342,6 +390,7 @@
         const messageInput = document.getElementById('message-input');
         const sendBtn = document.getElementById('send-btn');
         const connectionStatus = document.getElementById('connection-status');
+        const homeButton = document.getElementById('home-button');
         
         // WebRTC variables
         let localStream;
@@ -361,6 +410,14 @@
             sendBtn.addEventListener('click', sendMessage);
             messageInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') sendMessage();
+            });
+            
+            // Home button functionality
+            homeButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                stopChat();
+                chatBox.innerHTML = '';
+                addStatusMessage("Ready to connect. Click 'Start Chat' to begin.");
             });
         });
         
