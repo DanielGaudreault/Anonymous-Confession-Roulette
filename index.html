@@ -3,26 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vent Roulette - Anonymous Confession Exchange</title>
+    <title>Omegle-Style Confession Roulette</title>
     <style>
         :root {
-            --primary: #6d28d9;
-            --secondary: #a78bfa;
-            --dark: #1e1b4b;
-            --light: #f5f3ff;
-            --accent: #f59e0b;
+            --primary: #0084ff;
+            --secondary: #00c3ff;
+            --dark: #111;
+            --light: #f8f8f8;
+            --accent: #ff3b3b;
+            --text: #333;
+            --text-light: #777;
         }
         
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
         }
         
         body {
-            background-color: var(--light);
-            color: var(--dark);
+            background-color: var(--dark);
+            color: var(--text);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -33,48 +35,86 @@
             color: white;
             padding: 1rem;
             text-align: center;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
         }
         
         .container {
-            max-width: 800px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .app-container {
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            padding: 2rem;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .status {
-            text-align: center;
-            margin-bottom: 1rem;
-            color: var(--primary);
-            font-weight: bold;
-        }
-        
-        .confession-input {
-            margin-bottom: 1rem;
-        }
-        
-        textarea {
-            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
             padding: 1rem;
-            border: 2px solid var(--secondary);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .video-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        @media (min-width: 768px) {
+            .video-container {
+                flex-direction: row;
+            }
+        }
+        
+        .video-box {
+            flex: 1;
+            background-color: #000;
             border-radius: 8px;
-            resize: none;
-            min-height: 120px;
+            overflow: hidden;
+            position: relative;
+            aspect-ratio: 4/3;
+        }
+        
+        .video-label {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background-color: #000;
+        }
+        
+        .controls {
+            background-color: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
+        }
+        
+        .interest-box {
+            margin-bottom: 1rem;
+        }
+        
+        .interest-input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
             font-size: 1rem;
             margin-bottom: 0.5rem;
+        }
+        
+        .interest-input::placeholder {
+            color: #aaa;
         }
         
         .buttons {
@@ -84,13 +124,14 @@
         }
         
         button {
-            padding: 0.75rem 1.5rem;
+            padding: 0.8rem 1.5rem;
             border: none;
-            border-radius: 8px;
+            border-radius: 4px;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.2s;
             flex: 1;
+            font-size: 1rem;
         }
         
         .primary-btn {
@@ -99,69 +140,89 @@
         }
         
         .secondary-btn {
-            background-color: var(--secondary);
-            color: white;
+            background-color: #eee;
+            color: var(--text);
         }
         
-        .accent-btn {
+        .danger-btn {
             background-color: var(--accent);
             color: white;
         }
         
         button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            opacity: 0.9;
+            transform: translateY(-1px);
         }
         
-        .confession-display {
-            border: 2px dashed var(--secondary);
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .chat-container {
+            background-color: white;
             border-radius: 8px;
-            padding: 1rem;
-            min-height: 120px;
-            margin-bottom: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            flex: 1;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #faf5ff;
+            flex-direction: column;
+        }
+        
+        .chat-box {
+            border: 1px solid #eee;
+            border-radius: 4px;
+            padding: 1rem;
+            min-height: 200px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 1rem;
             flex: 1;
         }
         
-        .confession-text {
-            font-size: 1.1rem;
-            line-height: 1.5;
+        .message {
+            margin-bottom: 0.8rem;
+            padding: 0.6rem 0.8rem;
+            border-radius: 4px;
+            max-width: 80%;
         }
         
-        .reaction-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            margin-top: 1rem;
+        .their-message {
+            background-color: #f0f0f0;
+            align-self: flex-start;
         }
         
-        .reaction-btn {
-            font-size: 1.5rem;
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .reaction-btn:hover {
-            background-color: rgba(0, 0, 0, 0.1);
-        }
-        
-        footer {
-            text-align: center;
-            padding: 1rem;
-            background-color: var(--dark);
+        .my-message {
+            background-color: var(--primary);
             color: white;
-            margin-top: auto;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+        
+        .status-message {
+            color: var(--text-light);
+            text-align: center;
+            font-size: 0.9rem;
+            margin: 0.5rem 0;
+        }
+        
+        .chat-input {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .chat-input input {
+            flex: 1;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        
+        .chat-input button {
+            flex: 0 0 auto;
+            padding: 0.8rem 1.2rem;
         }
         
         .hidden {
@@ -169,201 +230,331 @@
         }
         
         .loading {
-            animation: pulse 1.5s infinite;
+            position: relative;
         }
         
-        @keyframes pulse {
-            0% { opacity: 0.6; }
-            50% { opacity: 1; }
-            100% { opacity: 0.6; }
+        .loading::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            right: 1rem;
+            transform: translateY(-50%);
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
         }
         
-        /* Responsive adjustments */
-        @media (max-width: 600px) {
-            .container {
-                padding: 0.5rem;
-                margin: 1rem auto;
-            }
-            
-            .app-container {
-                padding: 1rem;
-            }
-            
-            .buttons {
-                flex-direction: column;
-            }
+        @keyframes spin {
+            to { transform: translateY(-50%) rotate(360deg); }
+        }
+        
+        footer {
+            text-align: center;
+            padding: 1rem;
+            background-color: var(--dark);
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+        
+        /* Omegle-like modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: 8px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+        }
+        
+        .modal h2 {
+            margin-bottom: 1rem;
+        }
+        
+        .modal p {
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
         }
     </style>
 </head>
 <body>
     <header>
-        <h1>Vent Roulette</h1>
-        <p>Share your weirdest thoughts anonymously with strangers</p>
+        <h1>Confession Roulette</h1>
+        <p>Anonymous video chat with strangers - share your weirdest thoughts</p>
     </header>
     
     <div class="container">
-        <div class="app-container">
-            <div class="status" id="status">Write your confession to begin</div>
-            
-            <div class="confession-input" id="input-section">
-                <textarea id="confession-text" placeholder="Type your weird confession here... (e.g., 'I pretend my plants are judging me')"></textarea>
-                <div class="buttons">
-                    <button class="secondary-btn" id="enhance-btn">Enhance with AI ✨</button>
-                    <button class="primary-btn" id="submit-btn">Submit Confession</button>
-                </div>
+        <div class="video-container">
+            <div class="video-box">
+                <video id="local-video" autoplay muted></video>
+                <div class="video-label">You</div>
+            </div>
+            <div class="video-box">
+                <video id="remote-video" autoplay></video>
+                <div class="video-label">Stranger</div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div class="interest-box">
+                <input type="text" id="interest-input" class="interest-input" placeholder="Add your interests (optional)">
+                <p style="color: var(--text-light); font-size: 0.9rem;">Example: "weird habits", "guilty pleasures", "embarrassing stories"</p>
             </div>
             
-            <div class="confession-display hidden" id="confession-display">
-                <p class="confession-text" id="partner-confession">Waiting for partner's confession...</p>
+            <div class="buttons">
+                <button id="start-btn" class="primary-btn">Start Chat</button>
+                <button id="stop-btn" class="danger-btn hidden">Disconnect</button>
+            </div>
+        </div>
+        
+        <div class="chat-container">
+            <div class="chat-box" id="chat-box">
+                <div class="status-message">Start a chat to begin confessing!</div>
             </div>
             
-            <div class="reaction-buttons hidden" id="reaction-section">
-                <button class="reaction-btn" data-reaction="😂">😂</button>
-                <button class="reaction-btn" data-reaction="😲">😲</button>
-                <button class="reaction-btn" data-reaction="🤔">🤔</button>
-                <button class="reaction-btn" data-reaction="❤️">❤️</button>
-            </div>
-            
-            <div class="buttons hidden" id="action-buttons">
-                <button class="secondary-btn" id="new-partner-btn">New Stranger</button>
-                <button class="primary-btn" id="reply-btn">Vent Again</button>
+            <div class="chat-input">
+                <input type="text" id="message-input" placeholder="Type your confession here..." disabled>
+                <button id="send-btn" class="primary-btn" disabled>Send</button>
             </div>
         </div>
     </div>
     
     <footer>
-        <p>All confessions are anonymous and not stored permanently</p>
+        <p>All chats are anonymous. Please be respectful. Minimum age: 18+</p>
     </footer>
     
+    <!-- Welcome Modal -->
+    <div class="modal" id="welcome-modal">
+        <div class="modal-content">
+            <h2>Welcome to Confession Roulette</h2>
+            <p>This is an anonymous video chat where you can share your weirdest thoughts and confessions with strangers.</p>
+            <p>Everything is anonymous - no registration required. Please follow community guidelines and be respectful.</p>
+            <div class="modal-buttons">
+                <button id="accept-btn" class="primary-btn">I Understand</button>
+            </div>
+        </div>
+    </div>
+    
     <script>
-        // State management
-        const state = {
-            currentConfession: '',
-            partnerConfession: '',
-            waitingForPartner: false
-        };
-        
         // DOM elements
-        const statusEl = document.getElementById('status');
-        const inputSection = document.getElementById('input-section');
-        const confessionText = document.getElementById('confession-text');
-        const enhanceBtn = document.getElementById('enhance-btn');
-        const submitBtn = document.getElementById('submit-btn');
-        const confessionDisplay = document.getElementById('confession-display');
-        const partnerConfessionEl = document.getElementById('partner-confession');
-        const reactionSection = document.getElementById('reaction-section');
-        const actionButtons = document.getElementById('action-buttons');
-        const newPartnerBtn = document.getElementById('new-partner-btn');
-        const replyBtn = document.getElementById('reply-btn');
-        const reactionBtns = document.querySelectorAll('.reaction-btn');
+        const localVideo = document.getElementById('local-video');
+        const remoteVideo = document.getElementById('remote-video');
+        const interestInput = document.getElementById('interest-input');
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const chatBox = document.getElementById('chat-box');
+        const messageInput = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-btn');
+        const welcomeModal = document.getElementById('welcome-modal');
+        const acceptBtn = document.getElementById('accept-btn');
         
-        // Mock database of confessions for demo purposes
+        // State
+        let localStream;
+        let peerConnection;
+        let dataChannel;
+        let isCaller = false;
+        
+        // Mock confession data
         const mockConfessions = [
-            "I sometimes pretend to text someone when I'm alone in public so I look less lonely.",
-            "I've eaten food that fell on the floor when no one was watching.",
-            "I still sleep with a stuffed animal and I'm in my 30s.",
-            "I practice conversations in the shower like I'm accepting an Oscar.",
-            "I judge people based on their browser bookmarks.",
-            "I've Googled 'am I a good person?' more than once.",
-            "I pretend my cat is giving me life advice.",
-            "I sometimes laugh at my own jokes when no one else does.",
-            "I've pretended to know a song when someone mentions it.",
-            "I have a secret candy stash that my family doesn't know about."
+            "I sometimes pretend to text someone when I'm alone in public",
+            "I've eaten food that fell on the floor when no one was watching",
+            "I still sleep with a stuffed animal and I'm in my 30s",
+            "I practice conversations in the shower like I'm accepting an Oscar",
+            "I judge people based on their browser bookmarks",
+            "I've Googled 'am I a good person?' more than once",
+            "I pretend my cat is giving me life advice",
+            "I sometimes laugh at my own jokes when no one else does",
+            "I've pretended to know a song when someone mentions it",
+            "I have a secret candy stash that my family doesn't know about"
         ];
         
-        // Event listeners
-        submitBtn.addEventListener('click', submitConfession);
-        enhanceBtn.addEventListener('click', enhanceConfession);
-        newPartnerBtn.addEventListener('click', newPartner);
-        replyBtn.addEventListener('click', startNewChat);
-        reactionBtns.forEach(btn => {
-            btn.addEventListener('click', sendReaction);
+        // Mock interests
+        const mockInterests = [
+            "weird habits",
+            "guilty pleasures",
+            "embarrassing stories",
+            "secret talents",
+            "childhood memories",
+            "unpopular opinions",
+            "pet peeves",
+            "strange dreams",
+            "social awkwardness",
+            "random thoughts"
+        ];
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Show welcome modal
+            welcomeModal.classList.remove('hidden');
+            
+            // Setup event listeners
+            acceptBtn.addEventListener('click', () => {
+                welcomeModal.classList.add('hidden');
+                setupCamera();
+            });
+            
+            startBtn.addEventListener('click', startChat);
+            stopBtn.addEventListener('click', stopChat);
+            sendBtn.addEventListener('click', sendMessage);
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendMessage();
+            });
+            
+            // Add placeholder interests
+            const randomInterest = mockInterests[Math.floor(Math.random() * mockInterests.length)];
+            interestInput.placeholder = `e.g. "${randomInterest}"`;
         });
         
-        // Functions
-        function submitConfession() {
-            const confession = confessionText.value.trim();
-            if (!confession) {
-                alert("Please write something first!");
-                return;
+        // Set up user's camera
+        async function setupCamera() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: true, 
+                    audio: true 
+                });
+                localVideo.srcObject = localStream;
+                startBtn.disabled = false;
+            } catch (err) {
+                console.error("Error accessing media devices:", err);
+                addStatusMessage("Could not access camera/microphone. Please check permissions.");
+                startBtn.disabled = true;
             }
-            
-            state.currentConfession = confession;
-            state.waitingForPartner = true;
+        }
+        
+        // Start a new chat
+        function startChat() {
+            startBtn.classList.add('hidden');
+            stopBtn.classList.remove('hidden');
+            startBtn.disabled = true;
+            messageInput.disabled = false;
+            sendBtn.disabled = false;
             
             // Show loading state
-            statusEl.textContent = "Finding someone to vent with...";
-            statusEl.classList.add('loading');
-            inputSection.classList.add('hidden');
-            confessionDisplay.classList.remove('hidden');
+            startBtn.classList.add('loading');
             
-            // Simulate finding a partner after delay
-            setTimeout(findPartner, 1500);
+            // Clear chat box
+            chatBox.innerHTML = '';
+            addStatusMessage("Looking for someone to chat with...");
+            
+            // In a real app, this would connect to a signaling server
+            // For demo, we'll simulate finding a partner after a delay
+            setTimeout(() => {
+                startBtn.classList.remove('loading');
+                simulatePartnerConnection();
+            }, 2000);
         }
         
-        function findPartner() {
-            state.waitingForPartner = false;
-            statusEl.textContent = "Partner found! Here's their confession:";
-            statusEl.classList.remove('loading');
+        // Simulate partner connection (for demo)
+        function simulatePartnerConnection() {
+            // Randomly decide if we're caller or callee
+            isCaller = Math.random() > 0.5;
             
-            // Get a random confession from our mock data
-            const randomIndex = Math.floor(Math.random() * mockConfessions.length);
-            state.partnerConfession = mockConfessions[randomIndex];
-            partnerConfessionEl.textContent = state.partnerConfession;
-            
-            // Show reaction and action buttons
-            reactionSection.classList.remove('hidden');
-            actionButtons.classList.remove('hidden');
-        }
-        
-        function enhanceConfession() {
-            const confession = confessionText.value.trim();
-            if (!confession) {
-                alert("Please write something first!");
-                return;
+            if (isCaller) {
+                addStatusMessage("Stranger connected! You're the first to confess.");
+            } else {
+                addStatusMessage("Stranger connected! They're sharing their confession first...");
+                
+                // Simulate receiving a confession after delay
+                setTimeout(() => {
+                    const randomConfession = mockConfessions[Math.floor(Math.random() * mockConfessions.length)];
+                    receiveMessage(randomConfession);
+                }, 1500);
             }
             
-            // Mock AI enhancement for demo
-            const enhancements = [
-                `"${confession}"... and I'd do it again in a heartbeat!`,
-                `Not only do I ${confession}, but I've convinced three other people to do it too.`,
-                `I ${confession} as part of my elaborate 5-step plan to take over the world.`,
-                `${confession} is just the tip of the iceberg - you should see what else I get up to.`,
-                `I ${confession} and I'm PROUD of it!`
-            ];
-            
-            const randomEnhancement = enhancements[Math.floor(Math.random() * enhancements.length)];
-            confessionText.value = randomEnhancement;
+            // In a real app, we'd set up WebRTC connection here
+            // For demo, we'll just show the local video
+            remoteVideo.srcObject = localStream.clone();
         }
         
-        function newPartner() {
-            // Reset for a new partner
-            statusEl.textContent = "Finding someone new to vent with...";
-            statusEl.classList.add('loading');
-            partnerConfessionEl.textContent = "Waiting for partner's confession...";
-            reactionSection.classList.add('hidden');
-            actionButtons.classList.add('hidden');
+        // Stop the current chat
+        function stopChat() {
+            startBtn.classList.remove('hidden', 'loading');
+            stopBtn.classList.add('hidden');
+            startBtn.disabled = false;
+            messageInput.disabled = true;
+            sendBtn.disabled = true;
             
-            // Simulate finding a new partner
-            setTimeout(findPartner, 1500);
+            // Reset video elements
+            if (remoteVideo.srcObject) {
+                remoteVideo.srcObject.getTracks().forEach(track => track.stop());
+                remoteVideo.srcObject = null;
+            }
+            
+            // Clear chat
+            chatBox.innerHTML = '';
+            addStatusMessage("Disconnected. Click 'Start Chat' to begin again.");
+            
+            // In a real app, we'd close the peer connection here
         }
         
-        function startNewChat() {
-            // Reset to initial state
-            state.currentConfession = '';
-            state.partnerConfession = '';
-            confessionText.value = '';
+        // Send a message
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
             
-            statusEl.textContent = "Write your confession to begin";
-            inputSection.classList.remove('hidden');
-            confessionDisplay.classList.add('hidden');
-            reactionSection.classList.add('hidden');
-            actionButtons.classList.add('hidden');
+            // Add to chat
+            addMessage(message, true);
+            messageInput.value = '';
+            
+            // In a real app, this would send via data channel
+            // For demo, we'll simulate a response after delay
+            if (isCaller) {
+                setTimeout(() => {
+                    const randomConfession = mockConfessions[Math.floor(Math.random() * mockConfessions.length)];
+                    receiveMessage(randomConfession);
+                }, 1000);
+            }
         }
         
-        function sendReaction(e) {
-            const reaction = e.target.getAttribute('data-reaction');
-            alert(`You reacted with ${reaction}. In a real app, this would send to your partner!`);
+        // Receive a message
+        function receiveMessage(message) {
+            addMessage(message, false);
+        }
+        
+        // Add message to chat box
+        function addMessage(text, isMe) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            messageDiv.classList.add(isMe ? 'my-message' : 'their-message');
+            messageDiv.textContent = text;
+            
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            
+            // Remove any status messages
+            const statusMessages = document.querySelectorAll('.status-message');
+            statusMessages.forEach(msg => msg.remove());
+        }
+        
+        // Add status message
+        function addStatusMessage(text) {
+            const statusDiv = document.createElement('div');
+            statusDiv.classList.add('status-message');
+            statusDiv.textContent = text;
+            
+            chatBox.appendChild(statusDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
         }
     </script>
 </body>
