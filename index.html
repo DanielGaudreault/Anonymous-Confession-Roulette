@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Confession Roulette</title>
+    <title>Confession Chat - Anonymous 1-on-1 Video</title>
     <style>
         :root {
             --primary: #0084ff;
@@ -36,6 +36,15 @@
             padding: 1rem;
             text-align: center;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        .logo {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            height: 40px;
+            width: auto;
         }
         
         h1 {
@@ -259,50 +268,28 @@
             font-size: 0.9rem;
         }
         
-        /* Omegle-like modal */
-        .modal {
+        /* Connection status */
+        .connection-status {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-        }
-        
-        .modal-content {
-            background-color: white;
-            border-radius: 8px;
-            padding: 2rem;
-            max-width: 500px;
-            width: 90%;
-            text-align: center;
-        }
-        
-        .modal h2 {
-            margin-bottom: 1rem;
-        }
-        
-        .modal p {
-            margin-bottom: 1.5rem;
-            line-height: 1.5;
-        }
-        
-        .modal-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            z-index: 10;
         }
     </style>
 </head>
 <body>
     <header>
-        <h1>Confession Roulette</h1>
-        <p>Anonymous video chat with strangers - share your weirdest thoughts</p>
+        <img src="images/main%20logo%202.png" alt="Confession Chat Logo" class="logo">
+        <h1>Confession Chat</h1>
+        <p>Anonymous 1-on-1 video chat with strangers</p>
     </header>
+    
+    <div class="connection-status hidden" id="connection-status">Connecting...</div>
     
     <div class="container">
         <div class="video-container">
@@ -344,18 +331,6 @@
         <p>All chats are anonymous. Please be respectful. Minimum age: 18+</p>
     </footer>
     
-    <!-- Welcome Modal -->
-    <div class="modal" id="welcome-modal">
-        <div class="modal-content">
-            <h2>Welcome to Confession Roulette</h2>
-            <p>This is an anonymous video chat where you can share your weirdest thoughts and confessions with strangers.</p>
-            <p>Everything is anonymous - no registration required. Please follow community guidelines and be respectful.</p>
-            <div class="modal-buttons">
-                <button id="accept-btn" class="primary-btn">I Understand</button>
-            </div>
-        </div>
-    </div>
-    
     <script>
         // DOM elements
         const localVideo = document.getElementById('local-video');
@@ -366,64 +341,27 @@
         const chatBox = document.getElementById('chat-box');
         const messageInput = document.getElementById('message-input');
         const sendBtn = document.getElementById('send-btn');
-        const welcomeModal = document.getElementById('welcome-modal');
-        const acceptBtn = document.getElementById('accept-btn');
+        const connectionStatus = document.getElementById('connection-status');
         
-        // State
+        // WebRTC variables
         let localStream;
         let peerConnection;
         let dataChannel;
+        let socket;
+        let roomId;
         let isCaller = false;
-        
-        // Mock confession data
-        const mockConfessions = [
-            "I sometimes pretend to text someone when I'm alone in public",
-            "I've eaten food that fell on the floor when no one was watching",
-            "I still sleep with a stuffed animal and I'm in my 30s",
-            "I practice conversations in the shower like I'm accepting an Oscar",
-            "I judge people based on their browser bookmarks",
-            "I've Googled 'am I a good person?' more than once",
-            "I pretend my cat is giving me life advice",
-            "I sometimes laugh at my own jokes when no one else does",
-            "I've pretended to know a song when someone mentions it",
-            "I have a secret candy stash that my family doesn't know about"
-        ];
-        
-        // Mock interests
-        const mockInterests = [
-            "weird habits",
-            "guilty pleasures",
-            "embarrassing stories",
-            "secret talents",
-            "childhood memories",
-            "unpopular opinions",
-            "pet peeves",
-            "strange dreams",
-            "social awkwardness",
-            "random thoughts"
-        ];
         
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
-            // Show welcome modal
-            welcomeModal.classList.remove('hidden');
+            setupCamera();
             
             // Setup event listeners
-            acceptBtn.addEventListener('click', () => {
-                welcomeModal.classList.add('hidden');
-                setupCamera();
-            });
-            
             startBtn.addEventListener('click', startChat);
             stopBtn.addEventListener('click', stopChat);
             sendBtn.addEventListener('click', sendMessage);
             messageInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') sendMessage();
             });
-            
-            // Add placeholder interests
-            const randomInterest = mockInterests[Math.floor(Math.random() * mockInterests.length)];
-            interestInput.placeholder = `e.g. "${randomInterest}"`;
         });
         
         // Set up user's camera
@@ -451,49 +389,56 @@
             sendBtn.disabled = false;
             
             // Show loading state
-            startBtn.classList.add('loading');
+            connectionStatus.classList.remove('hidden');
+            connectionStatus.textContent = "Connecting to stranger...";
             
             // Clear chat box
             chatBox.innerHTML = '';
-            addStatusMessage("Looking for someone to chat with...");
+            addStatusMessage("Connecting to a stranger...");
             
             // In a real app, this would connect to a signaling server
-            // For demo, we'll simulate finding a partner after a delay
+            // For demo, we'll simulate WebSocket connection
+            simulateWebSocketConnection();
+        }
+        
+        // Simulate WebSocket connection (demo only)
+        function simulateWebSocketConnection() {
             setTimeout(() => {
-                startBtn.classList.remove('loading');
-                simulatePartnerConnection();
+                // Randomly decide if we're caller or callee
+                isCaller = Math.random() > 0.5;
+                
+                if (isCaller) {
+                    connectionStatus.textContent = "Connected - You're first to confess";
+                    addStatusMessage("Connected! You can send your confession first.");
+                } else {
+                    connectionStatus.textContent = "Connected - Waiting for confession";
+                    addStatusMessage("Connected! Waiting for stranger's confession...");
+                }
+                
+                // Simulate remote video stream (in real app this would be actual remote stream)
+                remoteVideo.srcObject = localStream.clone();
+                
+                // Set up simulated data channel
+                setupDataChannel();
             }, 2000);
         }
         
-        // Simulate partner connection (for demo)
-        function simulatePartnerConnection() {
-            // Randomly decide if we're caller or callee
-            isCaller = Math.random() > 0.5;
-            
-            if (isCaller) {
-                addStatusMessage("Stranger connected! You're the first to confess.");
-            } else {
-                addStatusMessage("Stranger connected! They're sharing their confession first...");
-                
-                // Simulate receiving a confession after delay
-                setTimeout(() => {
-                    const randomConfession = mockConfessions[Math.floor(Math.random() * mockConfessions.length)];
-                    receiveMessage(randomConfession);
-                }, 1500);
-            }
-            
-            // In a real app, we'd set up WebRTC connection here
-            // For demo, we'll just show the local video
-            remoteVideo.srcObject = localStream.clone();
+        // Set up data channel (simulated)
+        function setupDataChannel() {
+            // In a real app, this would be actual RTCDataChannel
+            // For demo, we'll just enable the chat input
+            messageInput.disabled = false;
+            sendBtn.disabled = false;
         }
         
         // Stop the current chat
         function stopChat() {
-            startBtn.classList.remove('hidden', 'loading');
+            startBtn.classList.remove('hidden');
             stopBtn.classList.add('hidden');
             startBtn.disabled = false;
             messageInput.disabled = true;
             sendBtn.disabled = true;
+            connectionStatus.classList.add('hidden');
             
             // Reset video elements
             if (remoteVideo.srcObject) {
@@ -504,8 +449,6 @@
             // Clear chat
             chatBox.innerHTML = '';
             addStatusMessage("Disconnected. Click 'Start Chat' to begin again.");
-            
-            // In a real app, we'd close the peer connection here
         }
         
         // Send a message
@@ -518,18 +461,8 @@
             messageInput.value = '';
             
             // In a real app, this would send via data channel
-            // For demo, we'll simulate a response after delay
-            if (isCaller) {
-                setTimeout(() => {
-                    const randomConfession = mockConfessions[Math.floor(Math.random() * mockConfessions.length)];
-                    receiveMessage(randomConfession);
-                }, 1000);
-            }
-        }
-        
-        // Receive a message
-        function receiveMessage(message) {
-            addMessage(message, false);
+            // For demo, we'll just show it was sent
+            connectionStatus.textContent = "Connected - Message sent";
         }
         
         // Add message to chat box
